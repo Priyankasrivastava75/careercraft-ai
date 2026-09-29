@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 import { UploadCloud, FileText, CheckCircle2, AlertCircle, X, Loader2, Sparkles, FileCode } from 'lucide-react';
-
-const API_BASE_URL = 'http://localhost:5001/api';
 
 export default function UploadCvModal({ isOpen, onClose, onUploadSuccess }) {
   const { token } = useAuth();

@@ -24,8 +24,7 @@ import {
   RefreshCw,
   FolderKanban
 } from 'lucide-react';
-
-const API_BASE_URL = 'http://localhost:5001/api';
+import { API_BASE_URL } from '../config/api';
 
 const sampleJobDescription = `We are seeking a Senior Full Stack Software Engineer at TechCorp AI to build next-generation AI web platforms. 
 
