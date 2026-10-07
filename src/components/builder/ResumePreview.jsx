@@ -1,5 +1,5 @@
-import React from 'react';
-import { Download, Printer } from 'lucide-react';
+import React, { useState } from 'react';
+import { Download, Loader2 } from 'lucide-react';
 import ModernTemplate from './templates/ModernTemplate';
 import MinimalTemplate from './templates/MinimalTemplate';
 import ProfessionalTemplate from './templates/ProfessionalTemplate';
@@ -7,8 +7,37 @@ import CreativeTemplate from './templates/CreativeTemplate';
 import ExecutiveTemplate from './templates/ExecutiveTemplate';
 
 export default function ResumePreview({ data, selectedTemplate = 'modern' }) {
-  const handlePrint = () => {
-    window.print();
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleDownloadPdf = () => {
+    if (isGenerating) return;
+
+    // Set loading state immediately so UI feedback paints instantly (prevents Chrome INP metric latency)
+    setIsGenerating(true);
+
+    // Defer heavy print execution to next paint frame using requestAnimationFrame + setTimeout
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const cleanupListener = () => {
+          setIsGenerating(false);
+          window.removeEventListener('afterprint', cleanupListener);
+        };
+
+        window.addEventListener('afterprint', cleanupListener);
+
+        try {
+          window.print();
+        } catch (err) {
+          console.error('Failed to trigger print dialog:', err);
+          setIsGenerating(false);
+        }
+
+        // Safety fallback timer to guarantee state reset
+        setTimeout(() => {
+          setIsGenerating(false);
+        }, 1200);
+      }, 100);
+    });
   };
 
   const renderTemplate = () => {
@@ -40,11 +69,25 @@ export default function ResumePreview({ data, selectedTemplate = 'modern' }) {
 
         <button
           type="button"
-          onClick={handlePrint}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+          onClick={handleDownloadPdf}
+          disabled={isGenerating}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all cursor-pointer ${
+            isGenerating
+              ? 'bg-indigo-900/80 border border-indigo-700/60 opacity-80 cursor-wait'
+              : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-md shadow-indigo-500/20'
+          }`}
         >
-          <Download className="w-3.5 h-3.5" />
-          <span>Download PDF</span>
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-300" />
+              <span>Generating PDF...</span>
+            </>
+          ) : (
+            <>
+              <Download className="w-3.5 h-3.5" />
+              <span>Download PDF</span>
+            </>
+          )}
         </button>
       </div>
 
@@ -55,4 +98,5 @@ export default function ResumePreview({ data, selectedTemplate = 'modern' }) {
     </div>
   );
 }
+
 
