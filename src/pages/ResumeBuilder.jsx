@@ -84,8 +84,8 @@ const sampleResumeState = {
 };
 
 export default function ResumeBuilder() {
-  const [resumeData, setResumeData] = useState(sampleResumeState);
-  const [selectedTemplate, setSelectedTemplate] = useState('modern'); // 'modern' | 'minimal' | 'professional'
+  const [resumeData, setResumeData] = useState(initialResumeState);
+  const [selectedTemplate, setSelectedTemplate] = useState('modern'); // 'modern' | 'minimal' | 'professional' | 'creative' | 'executive'
   const [activeTab, setActiveTab] = useState('form'); // For mobile toggle ('form' | 'preview')
   const [errors, setErrors] = useState({});
 
