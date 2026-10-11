@@ -80,10 +80,16 @@ export default function UploadCvModal({ isOpen, onClose, onUploadSuccess }) {
         body: formData
       });
 
-      const data = await res.json();
+      let data = null;
+      const responseText = await res.text();
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseErr) {
+        throw new Error(responseText.slice(0, 160) || `Server error (${res.status}: ${res.statusText})`);
+      }
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to parse CV file.');
+        throw new Error(data?.message || `Failed to process CV file (HTTP ${res.status}: ${res.statusText}).`);
       }
 
       setStatus('success');
@@ -102,8 +108,8 @@ export default function UploadCvModal({ isOpen, onClose, onUploadSuccess }) {
       // Redirect to builder after 1 second so candidate can review & edit
       setTimeout(() => {
         onClose();
-        navigate('/builder');
-      }, 1200);
+        navigate('/builder', { state: { resumeData: data.data.resumeData, resumeId: data.data._id } });
+      }, 1000);
 
     } catch (err) {
       console.error('CV Upload error:', err);

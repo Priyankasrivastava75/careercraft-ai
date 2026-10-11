@@ -149,6 +149,17 @@ const uploadCv = async (req, res, next) => {
       });
     }
 
+    console.log(`📥 [CV Upload] Received file: "${req.file.originalname}" | Mime: ${req.file.mimetype} | Size: ${req.file.size} bytes`);
+
+    // Validate buffer presence and integrity
+    if (!req.file.buffer || !Buffer.isBuffer(req.file.buffer) || req.file.buffer.length === 0) {
+      console.error('❌ [CV Upload] File buffer is empty or invalid');
+      return res.status(400).json({
+        success: false,
+        message: 'Uploaded file buffer is empty or corrupt. Please re-upload.'
+      });
+    }
+
     // Validate size (5MB max)
     if (req.file.size > 5 * 1024 * 1024) {
       return res.status(400).json({
@@ -157,12 +168,16 @@ const uploadCv = async (req, res, next) => {
       });
     }
 
+    console.log(`🔍 [CV Upload] Extracting text from buffer (${req.file.buffer.length} bytes)...`);
+
     // Extract raw text from uploaded buffer
     const rawText = await extractTextFromBuffer(
       req.file.buffer,
       req.file.mimetype,
       req.file.originalname
     );
+
+    console.log(`✅ [CV Upload] Text extracted (${rawText.length} chars). Parsing structured resume fields...`);
 
     // Parse extracted text into structured resume fields
     const parsedResumeData = await parseCvTextToResumeData(rawText);
@@ -179,13 +194,18 @@ const uploadCv = async (req, res, next) => {
       resumeData: parsedResumeData
     });
 
+    console.log(`🎉 [CV Upload] Resume document created successfully (ID: ${resume._id})`);
+
     res.status(201).json({
       success: true,
       message: 'CV uploaded and parsed successfully!',
       data: resume
     });
   } catch (error) {
-    console.error('❌ CV Upload Controller Error:', error.message);
+    console.error('❌ [CV Upload] Controller Error:', error.message);
+    if (error.stack) {
+      console.error(error.stack);
+    }
     res.status(400).json({
       success: false,
       message: error.message || 'Failed to upload and parse CV file.'

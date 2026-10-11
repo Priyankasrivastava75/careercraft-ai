@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import BuilderNavbar from '../components/builder/BuilderNavbar';
 import TemplateSelector from '../components/builder/TemplateSelector';
 import PersonalInfoForm from '../components/builder/PersonalInfoForm';
@@ -84,16 +85,45 @@ const sampleResumeState = {
 };
 
 export default function ResumeBuilder() {
-  const [resumeData, setResumeData] = useState(initialResumeState);
+  const location = useLocation();
+  const [resumeData, setResumeData] = useState(() => {
+    if (location.state?.resumeData) {
+      return location.state.resumeData;
+    }
+    const stored = localStorage.getItem('careercraft_resume');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === 'object') return parsed;
+      } catch (e) {}
+    }
+    return initialResumeState;
+  });
+
   const [selectedTemplate, setSelectedTemplate] = useState('modern'); // 'modern' | 'minimal' | 'professional' | 'creative' | 'executive'
   const [activeTab, setActiveTab] = useState('form'); // For mobile toggle ('form' | 'preview')
   const [errors, setErrors] = useState({});
 
+  useEffect(() => {
+    if (location.state?.resumeData) {
+      setResumeData(location.state.resumeData);
+      try {
+        localStorage.setItem('careercraft_resume', JSON.stringify(location.state.resumeData));
+      } catch (e) {}
+    }
+  }, [location.state]);
+
   const handleSectionChange = (sectionKey, value) => {
-    setResumeData(prev => ({
-      ...prev,
-      [sectionKey]: value
-    }));
+    setResumeData(prev => {
+      const updated = {
+        ...prev,
+        [sectionKey]: value
+      };
+      try {
+        localStorage.setItem('careercraft_resume', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
 
     if (sectionKey === 'personalInfo') {
       const newErrors = { ...errors };
@@ -105,12 +135,18 @@ export default function ResumeBuilder() {
 
   const handleLoadSample = () => {
     setResumeData(sampleResumeState);
+    try {
+      localStorage.setItem('careercraft_resume', JSON.stringify(sampleResumeState));
+    } catch (e) {}
     setErrors({});
   };
 
   const handleReset = () => {
     if (window.confirm('Are you sure you want to reset all form fields?')) {
       setResumeData(initialResumeState);
+      try {
+        localStorage.removeItem('careercraft_resume');
+      } catch (e) {}
       setErrors({});
     }
   };
